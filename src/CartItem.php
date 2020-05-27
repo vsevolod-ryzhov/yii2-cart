@@ -7,34 +7,41 @@ namespace vsevolodryzhov\yii2Cart;
 
 class CartItem
 {
-    private $id;
-    private $count;
-    private $price;
+    /**
+     * @var ProductInterface
+     */
+    private $product;
 
-    public function __construct($id, $price, $count)
+    private $quantity;
+
+    public function __construct(ProductInterface $product, int $quantity)
     {
-        $this->id = $id;
-        $this->price = $price;
-        $this->count = $count;
+        $this->product = $product;
+        $this->quantity = $quantity;
     }
 
     public function getId()
     {
-        return $this->id;
+        return $this->product->getId();
     }
 
     public function getPrice()
     {
-        return $this->price;
+        return $this->product->getPrice();
     }
 
-    public function getCount()
+    public function getQuantity()
     {
-        return $this->count;
+        return $this->quantity;
     }
 
     public function getCost()
     {
-        return $this->price * $this->count;
+        return $this->product->getPrice() * $this->quantity;
+    }
+
+    public function getProduct(): ProductInterface
+    {
+        return $this->product;
     }
 }

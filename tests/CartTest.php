@@ -7,6 +7,7 @@ declare(strict_types=1);
 namespace vsevolodryzhov\yii2Cart;
 
 
+use DomainException;
 use PHPUnit_Framework_TestCase;
 use vsevolodryzhov\yii2Cart\cost\BaseCost;
 
@@ -25,13 +26,37 @@ class FakeStorage implements StorageInterface
     }
 }
 
+class FakeProduct implements ProductInterface
+{
+    private $id;
+    private $price;
+
+    public function __construct($id = 1, $price = 1000)
+    {
+        $this->id = $id;
+        $this->price = $price;
+    }
+
+    public function getId()
+    {
+        return $this->id;
+    }
+
+    public function getPrice()
+    {
+        return $this->price;
+    }
+}
+
 class CartTest extends PHPUnit_Framework_TestCase
 {
     private $cart;
+    private $product;
 
     public function setUp()
     {
         $this->cart = new Cart(new FakeStorage(), new BaseCost());
+        $this->product = new FakeProduct();
         parent::setUp();
     }
 
@@ -42,19 +67,19 @@ class CartTest extends PHPUnit_Framework_TestCase
 
     public function testAdd()
     {
-        $this->cart->add(1, 1000, 10);
+        $this->cart->add($this->product, 10);
         $items = $this->cart->getItems();
         $this->assertSame(1, $items[1]->getId());
         $this->assertSame(1000, $items[1]->getPrice());
-        $this->assertSame(10, $items[1]->getCount());
-        $this->cart->add(1, 1000, 2);
+        $this->assertSame(10, $items[1]->getQuantity());
+        $this->cart->add($this->product, 2);
         $items = $this->cart->getItems();
-        $this->assertSame(12, $items[1]->getCount());
+        $this->assertSame(12, $items[1]->getQuantity());
     }
 
     public function testClear()
     {
-        $this->cart->add(1, 1000, 10);
+        $this->cart->add($this->product, 10);
         $this->assertNotEmpty($this->cart->getItems());
         $this->cart->clear();
         $this->assertEmpty($this->cart->getItems());
@@ -62,7 +87,7 @@ class CartTest extends PHPUnit_Framework_TestCase
 
     public function testRemove()
     {
-        $this->cart->add(1, 1000, 10);
+        $this->cart->add($this->product, 10);
         $this->assertNotEmpty($this->cart->getItems());
         $this->cart->removeItem(1);
         $this->assertEmpty($this->cart->getItems());
@@ -70,10 +95,17 @@ class CartTest extends PHPUnit_Framework_TestCase
 
     public function testCost()
     {
-        $this->cart->add(1, 1000, 10);
-        $this->cart->add(1, 1200, 2);
+        $this->cart->add($this->product, 10);
+        $this->cart->add(new FakeProduct(1, 1200), 2);
         $items = $this->cart->getItems();
         $this->assertSame(1200, $items[1]->getPrice());
         $this->assertSame(floatval(14400), $this->cart->getCost());
+    }
+
+    public function testRemoveNotExisted()
+    {
+        $this->cart->add($this->product, 1);
+        $this->setExpectedException(DomainException::class, 'Product not found in cart.');
+        $this->cart->removeItem(2);
     }
 }
