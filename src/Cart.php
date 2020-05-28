@@ -27,7 +27,7 @@ class Cart
         return $this->items;
     }
 
-    public function add(ProductInterface $product, $count = 1): void
+    public function addItem(ProductInterface $product, $count = 1): void
     {
         $this->loadItems();
         $id = $product->getId();

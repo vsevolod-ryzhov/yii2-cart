@@ -67,19 +67,19 @@ class CartTest extends PHPUnit_Framework_TestCase
 
     public function testAdd()
     {
-        $this->cart->add($this->product, 10);
+        $this->cart->addItem($this->product, 10);
         $items = $this->cart->getItems();
         $this->assertSame(1, $items[1]->getId());
         $this->assertSame(1000, $items[1]->getPrice());
         $this->assertSame(10, $items[1]->getQuantity());
-        $this->cart->add($this->product, 2);
+        $this->cart->addItem($this->product, 2);
         $items = $this->cart->getItems();
         $this->assertSame(12, $items[1]->getQuantity());
     }
 
     public function testClear()
     {
-        $this->cart->add($this->product, 10);
+        $this->cart->addItem($this->product, 10);
         $this->assertNotEmpty($this->cart->getItems());
         $this->cart->clear();
         $this->assertEmpty($this->cart->getItems());
@@ -87,7 +87,7 @@ class CartTest extends PHPUnit_Framework_TestCase
 
     public function testRemove()
     {
-        $this->cart->add($this->product, 10);
+        $this->cart->addItem($this->product, 10);
         $this->assertNotEmpty($this->cart->getItems());
         $this->cart->removeItem(1);
         $this->assertEmpty($this->cart->getItems());
@@ -95,8 +95,8 @@ class CartTest extends PHPUnit_Framework_TestCase
 
     public function testCost()
     {
-        $this->cart->add($this->product, 10);
-        $this->cart->add(new FakeProduct(1, 1200), 2);
+        $this->cart->addItem($this->product, 10);
+        $this->cart->addItem(new FakeProduct(1, 1200), 2);
         $items = $this->cart->getItems();
         $this->assertSame(1200, $items[1]->getPrice());
         $this->assertSame(floatval(14400), $this->cart->getCost());
@@ -104,7 +104,7 @@ class CartTest extends PHPUnit_Framework_TestCase
 
     public function testRemoveNotExisted()
     {
-        $this->cart->add($this->product, 1);
+        $this->cart->addItem($this->product, 1);
         $this->setExpectedException(DomainException::class, 'Product not found in cart.');
         $this->cart->removeItem(2);
     }

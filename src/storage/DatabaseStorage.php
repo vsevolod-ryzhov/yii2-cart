@@ -57,7 +57,8 @@ class DatabaseStorage implements StorageInterface
 
         $items = [];
         foreach ($rows as $row) {
-            if ($product = $this->productQuery->andWhere([$this->productTableIdField => $row[$this->productIdField]])->canBuy()->one()) {
+            $query = clone($this->productQuery);
+            if ($product = $query->andWhere([$this->productTableIdField => $row[$this->productIdField]])->canBuy()->one()) {
                 $cartItem = $this->converter->convertProductToCartItem($product, intval($row[$this->quantityField]));;
                 $items[$cartItem->getId()] = $cartItem;
             }
