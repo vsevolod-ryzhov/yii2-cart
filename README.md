@@ -2,7 +2,14 @@
 
 Yii2 cart component for eCommerce web applications
 
-## usage
+## Installation
+
+Via Composer
+```
+composer require vsevolod-ryzhov/yii2-cart
+```
+
+## Usage
 
 Use CombinedStorage if you want to use all provided functionality.
 
