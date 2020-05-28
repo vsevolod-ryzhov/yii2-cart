@@ -4,6 +4,8 @@ Yii2 cart component for eCommerce web applications
 
 ## usage
 
+Use CombinedStorage if you want to use all provided functionality.
+
 1. To use session as cart storage:
 
 ```php
@@ -14,11 +16,8 @@ class Init implements BootstrapInterface
     {
         $container = Yii::$container;
 
-        /* @var $session Session */
-        $session = $app->session;
-
         $container->setSingleton(Cart::class, [], [
-            new SessionStorage('cart', $session), new BaseCost()
+            new SessionStorage('cart', $app->session), new BaseCost()
         ]);
     }
 }
@@ -79,21 +78,14 @@ class Init implements BootstrapInterface
     public function bootstrap($app): void
     {
         $container = Yii::$container;
-
-        /* @var $session Session */
-        $session = $app->session;
-
-        /* @var $connection Connection */
-        $connection = $app->db;
-
         if ($app->user->isGuest) {
             $container->setSingleton(Cart::class, [], [
-                new SessionStorage('cart', $session), new BaseCost()
+                new SessionStorage('cart', $app->session), new BaseCost()
             ]);
         } else {
             // you can specify database options for DatabaseStorage class (cartItemsTable & etc)
             $container->setSingleton(Cart::class, [], [
-                new DatabaseStorage($app->user->id, $connection, new ProductsQuery(Product::class), new ProductToCartConverter), new BaseCost()
+                new DatabaseStorage($app->user->id, $app->db, new ProductsQuery(Product::class), new ProductToCartConverter), new BaseCost()
             ]);
         }
     }
@@ -109,6 +101,51 @@ class ProductsQuery extends AbstractProductQuery
     {
         // query product which user can buy
         return $this->active()->available();
+    }
+}
+```
+
+3. To use CookieStorage:
+
+```php
+// use ProductToCartConverter from previews sample
+class Init implements BootstrapInterface
+{
+    $container->setSingleton(Cart::class, [], [
+        new CookieStorage(
+            'cart',
+            3600,
+            $app->request->cookies,
+            $app->response->cookies,
+            new ProductsQuery(Product::class),
+            new ProductToCartConverter
+        ),
+        new BaseCost()
+    ]);
+}
+```
+
+4. CombinedStorage (CookieStorage + DatabaseStorage):
+
+```php
+class Init implements BootstrapInterface
+{
+    public function bootstrap($app): void
+    {
+        $container = Yii::$container;
+        $container->setSingleton(Cart::class, [], [
+            new CombinedStorage(
+                $app->user,
+                $app->db,
+                'cart',
+                3600,
+                $app->request->cookies,
+                $app->response->cookies,
+                new ProductsQuery(Product::class),
+                new ProductToCartConverter
+            ),
+            new BaseCost()
+        ]);
     }
 }
 ```
