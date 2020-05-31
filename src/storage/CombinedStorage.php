@@ -26,13 +26,9 @@ class CombinedStorage implements StorageInterface
      */
     private $connection;
     /**
-     * @var string
+     * @var CookieStorageSettings
      */
-    private $cookieKey;
-    /**
-     * @var int
-     */
-    private $cookieTimeout;
+    private $cookieSettings;
     /**
      * @var CookieCollection
      */
@@ -53,8 +49,7 @@ class CombinedStorage implements StorageInterface
     public function __construct(
         User $user,
         Connection $connection,
-        string $cookieKey,
-        int $cookieTimeout,
+        CookieStorageSettings $cookieSettings,
         CookieCollection $cookiesRequest,
         CookieCollection $cookiesResponse,
         AbstractProductQuery $productQuery,
@@ -63,8 +58,7 @@ class CombinedStorage implements StorageInterface
     {
         $this->user = $user;
         $this->connection = $connection;
-        $this->cookieKey = $cookieKey;
-        $this->cookieTimeout = $cookieTimeout;
+        $this->cookieSettings = $cookieSettings;
         $this->cookiesRequest = $cookiesRequest;
         $this->cookiesResponse = $cookiesResponse;
         $this->productQuery = $productQuery;
@@ -90,14 +84,20 @@ class CombinedStorage implements StorageInterface
     private function getStorage()
     {
         if ($this->storage === null) {
-            $cookieStorage = new CookieStorage($this->cookieKey, $this->cookieTimeout, $this->cookiesRequest, $this->cookiesResponse, $this->productQuery, $this->converter);
+            $cookieStorage = new CookieStorage(
+                $this->cookieSettings,
+                $this->cookiesRequest,
+                $this->cookiesResponse,
+                $this->productQuery,
+                $this->converter
+            );
             if ($this->user->isGuest) {
                 $this->storage = $cookieStorage;
             } else {
                 $dbStorage = new DatabaseStorage($this->user->id, $this->connection, $this->productQuery, $this->converter);
                 if ($cookieItems = $cookieStorage->load()) {
                     $dbItems = $dbStorage->load();
-                    $items = array_merge($dbItems, array_udiff($cookieItems, $dbItems, function (CartItem $first, CartItem $second) {
+                    $items = array_merge($dbItems, array_udiff($cookieItems, $dbItems, static function (CartItem $first, CartItem $second) {
                         return $first->getId() === $second->getId();
                     }));
                     $dbStorage->save($items);

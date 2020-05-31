@@ -20,14 +20,9 @@ class CookieStorage implements StorageInterface
     private const PRODUCT_QUANTITY_KEY = 'q';
 
     /**
-     * @var string
+     * @var CookieStorageSettings
      */
-    private $key;
-
-    /**
-     * @var int
-     */
-    private $timeout;
+    private $settings;
 
     /**
      * @var CookieCollection
@@ -52,16 +47,14 @@ class CookieStorage implements StorageInterface
     public $productTableIdField = 'id';
 
     public function __construct(
-        string $key,
-        int $timeout,
+        CookieStorageSettings $settings,
         CookieCollection $cookiesRequest,
         CookieCollection $cookiesResponse,
         AbstractProductQuery $productQuery,
         AbstractProductConverter $converter
     )
     {
-        $this->key = $key;
-        $this->timeout = $timeout;
+        $this->settings = $settings;
         $this->cookiesRequest = $cookiesRequest;
         $this->cookiesResponse = $cookiesResponse;
         $this->productQuery = $productQuery;
@@ -73,15 +66,15 @@ class CookieStorage implements StorageInterface
     public function load(): array
     {
         $items = [];
-        if ($cookie = $this->cookiesRequest->get($this->key)) {
+        if ($cookie = $this->cookiesRequest->get($this->settings->getCookieKey())) {
             foreach (Json::decode($cookie->value) as $cart_item) {
                 $query = clone($this->productQuery);
-                if (!isset($cart_item[self::PRODUCT_ID_KEY]) || !isset($cart_item[self::PRODUCT_QUANTITY_KEY])) {
+                if (!isset($cart_item[self::PRODUCT_ID_KEY], $cart_item[self::PRODUCT_QUANTITY_KEY])) {
                     continue;
                 }
 
                 if ($product = $query->andWhere([$this->productTableIdField => $cart_item[self::PRODUCT_ID_KEY]])->canBuy()->one()) {
-                    $cartItem = $this->converter->convertProductToCartItem($product, intval($cart_item[self::PRODUCT_QUANTITY_KEY]));;
+                    $cartItem = $this->converter->convertProductToCartItem($product, (int) $cart_item[self::PRODUCT_QUANTITY_KEY]);
                     $items[$cartItem->getId()] = $cartItem;
                 }
             }
@@ -95,14 +88,14 @@ class CookieStorage implements StorageInterface
     public function save($items): void
     {
         $this->cookiesResponse->add(new Cookie([
-            'name' => $this->key,
-            'value' => Json::encode(array_map(function (CartItem $item) {
+            'name' => $this->settings->getCookieKey(),
+            'value' => Json::encode(array_map(static function (CartItem $item) {
                 return [
                     self::PRODUCT_ID_KEY => $item->getId(),
                     self::PRODUCT_QUANTITY_KEY => $item->getQuantity(),
                 ];
             }, $items)),
-            'expire' => time() + $this->timeout,
+            'expire' => time() + $this->settings->getCookieTimeout(),
         ]));
     }
 }

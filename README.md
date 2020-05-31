@@ -120,8 +120,7 @@ class Init implements BootstrapInterface
 {
     $container->setSingleton(Cart::class, [], [
         new CookieStorage(
-            'cart',
-            3600,
+            new CookieStorageSettings('cart', 3600),
             $app->request->cookies,
             $app->response->cookies,
             new ProductsQuery(Product::class),
@@ -144,8 +143,7 @@ class Init implements BootstrapInterface
             new CombinedStorage(
                 $app->user,
                 $app->db,
-                'cart',
-                3600,
+                new CookieStorageSettings('cart', 3600),
                 $app->request->cookies,
                 $app->response->cookies,
                 new ProductsQuery(Product::class),

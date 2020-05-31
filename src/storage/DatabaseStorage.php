@@ -6,9 +6,11 @@ declare(strict_types=1);
 namespace vsevolodryzhov\yii2Cart\storage;
 
 
+use Exception;
 use vsevolodryzhov\yii2Cart\AbstractProductConverter;
 use vsevolodryzhov\yii2Cart\AbstractProductQuery;
 use vsevolodryzhov\yii2Cart\CartItem;
+use vsevolodryzhov\yii2Cart\StorageException;
 use vsevolodryzhov\yii2Cart\StorageInterface;
 use yii\db\Connection;
 use yii\db\Query;
@@ -59,7 +61,7 @@ class DatabaseStorage implements StorageInterface
         foreach ($rows as $row) {
             $query = clone($this->productQuery);
             if ($product = $query->andWhere([$this->productTableIdField => $row[$this->productIdField]])->canBuy()->one()) {
-                $cartItem = $this->converter->convertProductToCartItem($product, intval($row[$this->quantityField]));;
+                $cartItem = $this->converter->convertProductToCartItem($product, (int) $row[$this->quantityField]);
                 $items[$cartItem->getId()] = $cartItem;
             }
         }
@@ -69,24 +71,32 @@ class DatabaseStorage implements StorageInterface
 
     public function save($items): void
     {
-        $this->connection->createCommand()->delete($this->cartItemsTable, [
-            $this->userIdField => $this->userId,
-        ])->execute();
+        try {
+            $this->connection->createCommand()->delete($this->cartItemsTable, [
+                $this->userIdField => $this->userId,
+            ])->execute();
+        } catch (Exception $e) {
+            throw new StorageException('Database error: ' . $e->getMessage());
+        }
 
-        $this->connection->createCommand()->batchInsert(
-            $this->cartItemsTable,
-            [
-                $this->userIdField,
-                $this->productIdField,
-                $this->quantityField
-            ],
-            array_map(function (CartItem $item) {
-                return [
-                    $this->userIdField => $this->userId,
-                    $this->productIdField => $item->getId(),
-                    $this->quantityField => $item->getQuantity(),
-                ];
-            }, $items)
-        )->execute();
+        try {
+            $this->connection->createCommand()->batchInsert(
+                $this->cartItemsTable,
+                [
+                    $this->userIdField,
+                    $this->productIdField,
+                    $this->quantityField
+                ],
+                array_map(function (CartItem $item) {
+                    return [
+                        $this->userIdField => $this->userId,
+                        $this->productIdField => $item->getId(),
+                        $this->quantityField => $item->getQuantity(),
+                    ];
+                }, $items)
+            )->execute();
+        } catch (Exception $e) {
+            throw new StorageException('Database error: ' . $e->getMessage());
+        }
     }
 }
