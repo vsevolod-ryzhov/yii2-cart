@@ -70,4 +70,73 @@ class Cart
         $this->items = [];
         $this->saveItems();
     }
+
+    public function hasItem(ProductInterface $product): bool
+    {
+        if (array_key_exists($product->getId(), $this->items)) {
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * Count of product in cart
+     * @param ProductInterface $product
+     * @return int
+     */
+    public function getItemQuantity(ProductInterface $product): int
+    {
+        $id = $product->getId();
+        if (!array_key_exists($id, $this->items)) {
+            return 0;
+        }
+        /* @var $item CartItem */
+        $item = $this->items[$id];
+        return $item->getQuantity();
+    }
+
+    /**
+     * Cost of product in cart (price * quantity)
+     * @param ProductInterface $product
+     * @return int|null
+     */
+    public function getItemCost(ProductInterface $product): ?float
+    {
+        $id = $product->getId();
+        if (!array_key_exists($id, $this->items)) {
+            return null;
+        }
+        /* @var $item CartItem */
+        $item = $this->items[$id];
+        return $item->getCost();
+    }
+
+    /**
+     * Update product in cart
+     * @param ProductInterface $product
+     * @param $count
+     */
+    public function updateItem(ProductInterface $product, $count): void
+    {
+        $this->loadItems();
+        $id = $product->getId();
+        $this->items[$id] = new CartItem($product, $count);
+        $this->saveItems();
+    }
+
+    /**
+     * Get product item by id
+     * @param int $id
+     * @return ProductInterface|null
+     */
+    public function getItem(int $id): ?ProductInterface
+    {
+        if (!array_key_exists($id, $this->items)) {
+            return null;
+        }
+
+        /* @var $item CartItem */
+        $item = $this->items[$id];
+        return $item->getProduct();
+    }
 }
