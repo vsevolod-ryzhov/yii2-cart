@@ -34,34 +34,40 @@ class DatabaseStorage implements StorageInterface
      */
     private $converter;
 
-    public $cartItemsTable = '{{%cart_items}}';
-    public $userIdField = 'user_id';
-    public $productIdField = 'product_id';
-    public $quantityField = 'quantity';
-    public $productTableIdField = 'id';
+    /**
+     * @var DatabaseStorageSettings
+     */
+    private $settings;
 
-    public function __construct($userId, Connection $connection, AbstractProductQuery $productQuery, AbstractProductConverter $converter)
+    public function __construct(
+        $userId,
+        Connection $connection,
+        AbstractProductQuery $productQuery,
+        AbstractProductConverter $converter,
+        DatabaseStorageSettings $settings
+    )
     {
         $this->userId = $userId;
         $this->connection = $connection;
         $this->productQuery = $productQuery;
         $this->converter = $converter;
+        $this->settings = $settings;
     }
 
     public function load(): array
     {
         $rows = (new Query())
             ->select('*')
-            ->from($this->cartItemsTable)
-            ->where([$this->userIdField => $this->userId])
-            ->orderBy([$this->productIdField => SORT_ASC])
+            ->from($this->settings->getCartItemsTable())
+            ->where([$this->settings->getUserIdField() => $this->userId])
+            ->orderBy([$this->settings->getProductIdField() => SORT_ASC])
             ->all($this->connection);
 
         $items = [];
         foreach ($rows as $row) {
             $query = clone($this->productQuery);
-            if ($product = $query->andWhere([$this->productTableIdField => $row[$this->productIdField]])->canBuy()->one()) {
-                $cartItem = $this->converter->convertProductToCartItem($product, (int) $row[$this->quantityField]);
+            if ($product = $query->andWhere([$this->settings->getProductTableIdField() => $row[$this->settings->getProductIdField()]])->canBuy()->one()) {
+                $cartItem = $this->converter->convertProductToCartItem($product, (int) $row[$this->settings->getQuantityField()]);
                 $items[$cartItem->getId()] = $cartItem;
             }
         }
@@ -72,8 +78,8 @@ class DatabaseStorage implements StorageInterface
     public function save($items): void
     {
         try {
-            $this->connection->createCommand()->delete($this->cartItemsTable, [
-                $this->userIdField => $this->userId,
+            $this->connection->createCommand()->delete($this->settings->getCartItemsTable(), [
+                $this->settings->getUserIdField() => $this->userId,
             ])->execute();
         } catch (Exception $e) {
             throw new StorageException('Database error: ' . $e->getMessage());
@@ -81,17 +87,17 @@ class DatabaseStorage implements StorageInterface
 
         try {
             $this->connection->createCommand()->batchInsert(
-                $this->cartItemsTable,
+                $this->settings->getCartItemsTable(),
                 [
-                    $this->userIdField,
-                    $this->productIdField,
-                    $this->quantityField
+                    $this->settings->getUserIdField(),
+                    $this->settings->getProductIdField(),
+                    $this->settings->getQuantityField()
                 ],
                 array_map(function (CartItem $item) {
                     return [
-                        $this->userIdField => $this->userId,
-                        $this->productIdField => $item->getId(),
-                        $this->quantityField => $item->getQuantity(),
+                        $this->settings->getUserIdField() => $this->userId,
+                        $this->settings->getProductIdField() => $item->getId(),
+                        $this->settings->getQuantityField() => $item->getQuantity(),
                     ];
                 }, $items)
             )->execute();

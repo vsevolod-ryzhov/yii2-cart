@@ -45,6 +45,10 @@ class CombinedStorage implements StorageInterface
      * @var AbstractProductConverter
      */
     private $converter;
+    /**
+     * @var DatabaseStorageSettings
+     */
+    private $databaseStorageSettings;
 
     public function __construct(
         User $user,
@@ -53,7 +57,8 @@ class CombinedStorage implements StorageInterface
         CookieCollection $cookiesRequest,
         CookieCollection $cookiesResponse,
         AbstractProductQuery $productQuery,
-        AbstractProductConverter $converter
+        AbstractProductConverter $converter,
+        DatabaseStorageSettings $databaseStorageSettings
     )
     {
         $this->user = $user;
@@ -63,6 +68,7 @@ class CombinedStorage implements StorageInterface
         $this->cookiesResponse = $cookiesResponse;
         $this->productQuery = $productQuery;
         $this->converter = $converter;
+        $this->databaseStorageSettings = $databaseStorageSettings;
     }
 
     /**
@@ -94,7 +100,7 @@ class CombinedStorage implements StorageInterface
             if ($this->user->isGuest) {
                 $this->storage = $cookieStorage;
             } else {
-                $dbStorage = new DatabaseStorage($this->user->id, $this->connection, $this->productQuery, $this->converter);
+                $dbStorage = new DatabaseStorage($this->user->id, $this->connection, $this->productQuery, $this->converter, $this->databaseStorageSettings);
                 if ($cookieItems = $cookieStorage->load()) {
                     $dbItems = $dbStorage->load();
                     $items = array_merge($dbItems, array_udiff($cookieItems, $dbItems, static function (CartItem $first, CartItem $second) {
