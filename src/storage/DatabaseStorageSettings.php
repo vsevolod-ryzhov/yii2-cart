@@ -14,6 +14,31 @@ class DatabaseStorageSettings
     private $quantityField = 'quantity';
     private $productTableIdField = 'id';
 
+    public function __construct(
+        $cartItemsTable = null,
+        $userIdField = null,
+        $productIdField = null,
+        $quantityField = null,
+        $productTableIdField = null
+    )
+    {
+        if ($cartItemsTable) {
+            $this->cartItemsTable = $cartItemsTable;
+        }
+        if ($userIdField) {
+            $this->userIdField = $userIdField;
+        }
+        if ($productIdField) {
+            $this->productIdField = $productIdField;
+        }
+        if ($quantityField) {
+            $this->quantityField = $quantityField;
+        }
+        if ($productTableIdField) {
+            $this->productTableIdField = $productTableIdField;
+        }
+    }
+
     /**
      * @return string
      */
