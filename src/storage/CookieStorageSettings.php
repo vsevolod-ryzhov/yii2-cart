@@ -18,10 +18,16 @@ class CookieStorageSettings
      */
     private $cookieTimeout;
 
-    public function __construct(string $cookieKey, int $cookieTimeout)
+    /**
+     * @var string
+     */
+    private $productTableIdField;
+
+    public function __construct(string $cookieKey, int $cookieTimeout, string $productTableIdField = 'id')
     {
         $this->cookieKey = $cookieKey;
         $this->cookieTimeout = $cookieTimeout;
+        $this->productTableIdField = $productTableIdField;
     }
 
     /**
@@ -38,5 +44,13 @@ class CookieStorageSettings
     public function getCookieTimeout(): int
     {
         return $this->cookieTimeout;
+    }
+
+    /**
+     * @return string
+     */
+    public function getProductTableIdField(): string
+    {
+        return $this->productTableIdField;
     }
 }

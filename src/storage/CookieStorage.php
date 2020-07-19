@@ -44,8 +44,6 @@ class CookieStorage implements StorageInterface
      */
     private $converter;
 
-    public $productTableIdField = 'id';
-
     public function __construct(
         CookieStorageSettings $settings,
         CookieCollection $cookiesRequest,
@@ -73,7 +71,7 @@ class CookieStorage implements StorageInterface
                     continue;
                 }
 
-                if ($product = $query->andWhere([$this->productTableIdField => $cart_item[self::PRODUCT_ID_KEY]])->canBuy()->one()) {
+                if ($product = $query->andWhere([$this->settings->getProductTableIdField() => $cart_item[self::PRODUCT_ID_KEY]])->canBuy()->one()) {
                     $cartItem = $this->converter->convertProductToCartItem($product, (int) $cart_item[self::PRODUCT_QUANTITY_KEY]);
                     $items[$cartItem->getId()] = $cartItem;
                 }
